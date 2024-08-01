@@ -37,6 +37,36 @@ def find_destination_dataset_tree(tree: Dict, needed_dataset_id: int) -> Optiona
     return None
 
 
+################### Old version of process_ds function #############################################
+####################################################################################################
+# def process_ds(api, dst_ds, meta, src_ds, tag_name):
+#     images_count = src_ds.images_count
+#     pbar_cb = sly.Progress(f"Processing '{src_ds.name}' dataset", images_count).iters_done
+
+#     # iterate by generator to avoid memory overflow
+#     for batch_imgs in api.image.get_list_generator(src_ds.id, batch_size=500):
+
+#         dst_imgs = api.image.copy_batch_optimized(src_ds.id, batch_imgs, dst_ds.id)
+#         dst_imgs_ids = [image_info.id for image_info in dst_imgs]
+
+#         for batch_ids in sly.batched(dst_imgs_ids):
+#             batch_ann_json = api.annotation.download_json_batch(dst_ds.id, batch_ids)
+
+#             anns_to_upload = {}
+#             for image_id, ann_json in zip(batch_ids, batch_ann_json):
+#                 is_valid, validated_ann = validate_annotation(ann_json, meta, tag_name)
+#                 if not is_valid:
+#                     anns_to_upload[image_id] = validated_ann
+
+#             if anns_to_upload:
+#                 api.annotation.upload_jsons(
+#                     list(anns_to_upload.keys()),
+#                     list(anns_to_upload.values()),
+#                 )
+#             pbar_cb(len(batch_ids))
+####################################################################################################
+
+
 def process_ds(
     api: sly.Api,
     dst_ds: sly.Dataset,
