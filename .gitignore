@@ -1,0 +1,8 @@
+.venv
+
+supervisely
+
+.DS_Store
+__pycache__
+
+APP_DATA

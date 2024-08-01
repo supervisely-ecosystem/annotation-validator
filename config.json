@@ -1,0 +1,45 @@
+{
+  "name": "Annotation Validator",
+  "type": "app",
+  "version": "2.0.0",
+  "categories": [
+    "system",
+    "data operations",
+    "project management",
+    "images",
+    "videos",
+    "pointclouds",
+    "dicom"
+  ],
+  "system": true,
+  "description": "Validate annotations in project",
+  "docker_image": "supervisely/base-py-sdk:6.73.145",
+  "min_instance_version": "6.10.0",
+  "main_script": "src/main.py",
+  "modal_template": "src/modal.html",
+  "modal_template_state": {
+    "projectName": "",
+    "datasetName": ""
+  },
+  "task_location": "workspace_tasks",
+  "isolate": true,
+  "headless": true,
+  "icon": "",
+  "icon_background": "#FFFFFF",
+  "icon_cover": true,
+  "context_menu": {
+    "target": [
+      "images_project",
+      "videos_project",
+      "point_cloud_project",
+      "volumes_project",
+      "point_cloud_episodes_project",
+      "images_dataset",
+      "videos_dataset",
+      "point_cloud_dataset",
+      "volumes_dataset",
+      "point_cloud_episodes_dataset"
+    ]
+  },
+  "poster": ""
+}
