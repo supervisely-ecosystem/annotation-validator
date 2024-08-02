@@ -4,17 +4,35 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, Optional, Tuple
 
 import supervisely as sly
+from src.validation_functions import get_func_by_geometry
+
 
 
 def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) -> Tuple[bool, Dict]:
     """Main function to validate annotation and add tag to invalid objects"""
-
-    ann = sly.Annotation.from_json(ann_json, meta)
     is_valid = True
-    tag_meta = meta.get_tag_meta(tag_name)
-    # TODO: validate annotation here
-    # if not is_valid: # if object is invalid add tag to it
-    #     label = label.add_tag(sly.Tag(tag_meta))
+    add_tag = tag_name is not None
+    ann = sly.Annotation.from_json(ann_json, meta)
+    if add_tag:
+        tag_meta = meta.get_tag_meta(tag_name)
+        tag = sly.Tag(tag_meta)
+
+    invalid_labels = []
+    for label in ann.labels:
+        func = get_func_by_geometry(label.geometry)
+        if func is not None:
+            label_is_valid = func(label)
+            if label_is_valid is False:
+                invalid_labels.append(label)
+                is_valid = False
+        else:
+            sly.logger.info(f"Geometry type {type(label.geometry)} is not supported. Skipping validation...")
+    for invalid_label in invalid_labels:
+        if add_tag:
+            ann.label.add_tag(tag)
+        else:
+            ann.delete_label(invalid_label)
+
     return is_valid, ann.to_json()
 
 

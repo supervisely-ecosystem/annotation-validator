@@ -19,7 +19,9 @@
   "modal_template": "src/modal.html",
   "modal_template_state": {
     "projectName": "",
-    "datasetName": ""
+    "datasetName": "",
+    "action": "tag",
+    "tagName": ""
   },
   "task_location": "workspace_tasks",
   "isolate": true,

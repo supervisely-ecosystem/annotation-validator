@@ -16,7 +16,11 @@ def main():
     # env variables
     project_id = sly.env.project_id()
     dataset_id = sly.env.dataset_id(raise_not_found=False)
-    tag_name = os.environ.get("modal.state.tagName", "need validation")
+    action = os.environ.get('modal.state.action')
+    if action=="tag":
+        tag_name = os.environ.get('modal.state.tagName', 'need validation')
+    else:
+        tag_name = None 
 
     # get source project and datasets tree
     src_project = api.project.get_info_by_id(project_id, raise_error=True)
@@ -35,8 +39,9 @@ def main():
 
     # prepare destination project meta
     meta = sly.ProjectMeta.from_json(api.project.get_meta(src_project.id))
-    meta = meta.add_tag_meta(sly.TagMeta(tag_name, sly.TagValueType.NONE))
-    meta = api.project.update_meta(dst_project.id, meta)
+    if tag_name is not None:
+        meta = meta.add_tag_meta(sly.TagMeta(tag_name, sly.TagValueType.NONE))
+        meta = api.project.update_meta(dst_project.id, meta)
 
     # process datasets
     for src_ds, children in datasets_tree.items():
