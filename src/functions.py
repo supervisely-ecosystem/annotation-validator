@@ -4,36 +4,49 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, Optional, Tuple
 
 import supervisely as sly
-from src.validation_functions import get_func_by_geometry
+from src.validation_functions import get_func_by_geometry_type
 
 
 
 def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) -> Tuple[bool, Dict]:
     """Main function to validate annotation and add tag to invalid objects"""
+    def _deserialization_check(obj, meta):
+        try:
+            label_obj = sly.Label.from_json(obj, meta)
+            if label_obj is not None:
+                return True
+        except Exception as e:
+            sly.logger.debug(repr(e))
+        return False
     is_valid = True
     add_tag = tag_name is not None
-    ann = sly.Annotation.from_json(ann_json, meta)
     if add_tag:
         tag_meta = meta.get_tag_meta(tag_name)
         tag = sly.Tag(tag_meta)
 
-    invalid_labels = []
-    for label in ann.labels:
-        func = get_func_by_geometry(label.geometry)
-        if func is not None:
-            label_is_valid = func(label)
-            if label_is_valid is False:
-                invalid_labels.append(label)
-                is_valid = False
-        else:
-            sly.logger.info(f"Geometry type {type(label.geometry)} is not supported. Skipping validation...")
-    for invalid_label in invalid_labels:
-        if add_tag:
-            ann.label.add_tag(tag)
-        else:
-            ann.delete_label(invalid_label)
+    new_objects = []
+    for obj in ann_json.get('objects'):
+        geometry_type = obj.get('geometryType')
+        validation_func = get_func_by_geometry_type(geometry_type)
+        if validation_func is None:
+            sly.logger.info(f"Geometry type {geometry_type} is not supported. Skipping validation...")
+            new_objects.append(obj)
 
-    return is_valid, ann.to_json()
+        if _deserialization_check(obj, meta) is False or validation_func(obj) is False:
+            is_valid = False
+            if add_tag:
+                object_tags = obj.get('tags')
+                if isinstance(object_tags, list):
+                    object_tags.append(tag)
+                else:
+                    object_tags = [tag]
+            else:
+                continue
+        new_objects.append(obj)
+
+    ann_json['objects'] = new_objects
+
+    return is_valid, ann_json
 
 
 def new_project_name(name: str) -> str:
