@@ -31,6 +31,7 @@ def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) ->
         if validation_func is None:
             sly.logger.info(f"Geometry type {geometry_type} is not supported. Skipping validation...")
             new_objects.append(obj)
+            continue
 
         if _deserialization_check(obj, meta) is False or validation_func(obj) is False:
             is_valid = False
@@ -40,6 +41,7 @@ def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) ->
                     object_tags.append(tag)
                 else:
                     object_tags = [tag]
+                obj['tags'] = object_tags
             else:
                 continue
         new_objects.append(obj)
