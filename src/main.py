@@ -16,11 +16,15 @@ def main():
     # env variables
     project_id = sly.env.project_id()
     dataset_id = sly.env.dataset_id(raise_not_found=False)
-    action = os.environ.get('modal.state.action')
-    if action=="tag":
-        tag_name = os.environ.get('modal.state.tagName', 'need validation')
-    else:
-        tag_name = None 
+    action = os.environ.get("modal.state.action")
+    if action == "tag":
+        tag_name = os.environ.get("modal.state.tagName", None)
+        if tag_name is None or tag_name == "":
+            tag_name = "need validation"
+    elif action == "del":
+        tag_name = None
+    elif action is None:
+        raise ValueError("Action cannot be obtained from environment.")
 
     # get source project and datasets tree
     src_project = api.project.get_info_by_id(project_id, raise_error=True)

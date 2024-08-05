@@ -1,26 +1,39 @@
 import supervisely as sly
 
+
 def get_func_by_geometry_type(geometry: str):
-    func_name = f'_validate_{geometry}'
-    func = globals().get(func_name, None)
-    return func
+    func_name = f"_validate_{geometry}"
+    return globals().get(func_name, None)
+
 
 def _validate_polygon(obj):
-    exterior_points = obj['points']['exterior']
-    interior_points = obj['points']['interior']
-    exterior_valid = len(exterior_points) > 3 
-    interior_valid = len(interior_points) not in [1, 2]
+    def _validate_points(points):
+        exterior = points["exterior"]
+        if len({*[tuple(p) for p in exterior]}) < 3:
+            return False
 
-    return exterior_valid is True and interior_valid is True
+        interior = points["interior"]
+        for shape in interior:
+            if len({*[tuple(p) for p in shape]}) in [1, 2]:
+                return False
+        return True
+
+    points = obj["points"]
+
+    return _validate_points(points)
+
+
 def _validate_bitmap(obj):
     is_valid = True
 
     return is_valid
 
+
 def _validate_rectangle(obj):
     is_valid = True
 
     return is_valid
+
 
 def _validate_polyline(obj):
     is_valid = True
@@ -29,10 +42,12 @@ def _validate_polyline(obj):
         is_valid = False
     return is_valid
 
+
 def _validate_point(obj):
     is_valid = True
 
     return is_valid
+
 
 def _validate_graphNodes(obj):
     is_valid = True

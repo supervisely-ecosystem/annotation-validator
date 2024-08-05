@@ -7,9 +7,9 @@ import supervisely as sly
 from src.validation_functions import get_func_by_geometry_type
 
 
-
 def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) -> Tuple[bool, Dict]:
     """Main function to validate annotation and add tag to invalid objects"""
+
     def _deserialization_check(obj, meta):
         try:
             label_obj = sly.Label.from_json(obj, meta)
@@ -18,35 +18,39 @@ def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) ->
         except Exception as e:
             sly.logger.debug(repr(e))
         return False
+
     is_valid = True
     add_tag = tag_name is not None
     if add_tag:
         tag_meta = meta.get_tag_meta(tag_name)
-        tag = sly.Tag(tag_meta)
+        tag = sly.Tag(tag_meta).to_json()
 
     new_objects = []
-    for obj in ann_json.get('objects'):
-        geometry_type = obj.get('geometryType')
+    for obj in ann_json.get("objects"):
+        geometry_type = obj.get("geometryType")
         validation_func = get_func_by_geometry_type(geometry_type)
         if validation_func is None:
-            sly.logger.info(f"Geometry type {geometry_type} is not supported. Skipping validation...")
+            sly.logger.warn(
+                f"Geometry type {geometry_type} is not supported. Skipping validation..."
+            )
             new_objects.append(obj)
             continue
 
         if _deserialization_check(obj, meta) is False or validation_func(obj) is False:
+            sly.logger.info("Found invalid object")
             is_valid = False
             if add_tag:
-                object_tags = obj.get('tags')
+                object_tags = obj.get("tags")
                 if isinstance(object_tags, list):
                     object_tags.append(tag)
                 else:
                     object_tags = [tag]
-                obj['tags'] = object_tags
+                obj["tags"] = object_tags
             else:
                 continue
         new_objects.append(obj)
 
-    ann_json['objects'] = new_objects
+    ann_json["objects"] = new_objects
 
     return is_valid, ann_json
 
