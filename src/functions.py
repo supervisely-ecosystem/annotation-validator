@@ -4,7 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, Optional, Tuple
 
 import supervisely as sly
-from src.validation_functions import get_func_by_geometry_type
+from src.validation_functions import get_validation_func
+from src.correction_functions import get_correction_func
 
 
 def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) -> Tuple[bool, Dict]:
@@ -16,7 +17,10 @@ def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) ->
             if label_obj is not None:
                 return True
         except Exception as e:
-            sly.logger.debug(repr(e))
+            sly.logger.warning(
+                f"Object (id: {obj.id}) deserialization failed. Exception message: {repr(e)}",
+                exc_info=True,
+            )
         return False
 
     is_valid = True
@@ -26,21 +30,20 @@ def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) ->
         tag = sly.Tag(tag_meta).to_json()
 
     new_objects = []
-    for obj in ann_json.get("objects"):
+    for obj in ann_json.get("objects", []):
         geometry_type = obj.get("geometryType")
-        validation_func = get_func_by_geometry_type(geometry_type)
-        if validation_func is None:
-            sly.logger.warn(
-                f"Geometry type {geometry_type} is not supported. Skipping validation..."
-            )
-            new_objects.append(obj)
-            continue
+        validation_func = get_validation_func(geometry_type)
+        correction_func = get_correction_func(geometry_type)
 
-        if _deserialization_check(obj, meta) is False or validation_func(obj) is False:
-            sly.logger.info("Found invalid object")
+        if not _deserialization_check(obj, meta) or (validation_func and not validation_func(obj)):
             is_valid = False
+            if correction_func:
+                obj = correction_func(obj)
+                sly.logger.info(
+                    f"Autocorrecting the object (id: {obj.id}, geometry: {geometry_type})"
+                )
             if add_tag:
-                object_tags = obj.get("tags")
+                object_tags = obj.get("tags", [])
                 if isinstance(object_tags, list):
                     object_tags.append(tag)
                 else:
