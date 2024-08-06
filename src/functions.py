@@ -31,7 +31,7 @@ def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) ->
 
     new_objects = []
     for obj in ann_json.get("objects", []):
-        geometry_type = obj.get("geometryType")
+        geometry_type = obj.get("geometryType", "")
         validation_func = get_validation_func(geometry_type)
         correction_func = get_correction_func(geometry_type)
 

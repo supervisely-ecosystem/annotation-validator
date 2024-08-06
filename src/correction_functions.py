@@ -15,7 +15,8 @@ def _correct_polygon(obj):
     int_points = obj["points"]["interior"]
 
     obj["points"]["exterior"] = _correct_points(ext_points)
-    obj["points"]["interior"] = [_correct_points(p) for p in int_points]
+    if len(int_points) > 0:
+        obj["points"]["interior"] = [_correct_points(p) for p in int_points]
     return obj
 
 
