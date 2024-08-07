@@ -8,7 +8,7 @@ from src.validation_functions import get_validation_func
 from src.correction_functions import get_correction_func
 
 
-def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) -> Tuple[bool, Dict]:
+def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_id: int) -> Tuple[bool, Dict]:
     """Main function to validate annotation and add tag to invalid objects"""
 
     def _deserialization_check(obj, meta):
@@ -18,44 +18,40 @@ def validate_annotation(ann_json: Dict, meta: sly.ProjectMeta, tag_name: str) ->
                 return True
         except Exception as e:
             sly.logger.warning(
-                f"Object (id: {obj.id}) deserialization failed. Exception message: {repr(e)}",
+                f"Object (id: {obj["id"]}) deserialization failed. Exception message: {repr(e)}",
                 exc_info=True,
             )
         return False
 
-    is_valid = True
-    add_tag = tag_name is not None
-    if add_tag:
-        tag_meta = meta.get_tag_meta(tag_name)
-        tag = sly.Tag(tag_meta).to_json()
-
-    new_objects = []
+    tags_to_add = []
+    geometries_figure_ids = []
+    geometries_list = []
     for obj in ann_json.get("objects", []):
         geometry_type = obj.get("geometryType", "")
+        object_id = obj.get('id', None)
+        if object_id is None:
+            raise KeyError(f'Figure ID not found. Object: {obj}')
+        
         validation_func = get_validation_func(geometry_type)
         correction_func = get_correction_func(geometry_type)
 
         if not _deserialization_check(obj, meta) or (validation_func and not validation_func(obj)):
-            is_valid = False
-            if correction_func:
-                obj = correction_func(obj)
-                sly.logger.info(
-                    f"Autocorrecting the object (id: {obj.id}, geometry: {geometry_type})"
-                )
-            if add_tag:
-                object_tags = obj.get("tags", [])
-                if isinstance(object_tags, list):
-                    object_tags.append(tag)
-                else:
-                    object_tags = [tag]
-                obj["tags"] = object_tags
+            if tag_id:
+                tag_fig_dict = {"figureId": object_id, "tagId": tag_id}
+                tags_to_add.append(tag_fig_dict)
             else:
-                continue
-        new_objects.append(obj)
+                if correction_func:
+                    obj = correction_func(obj)
+                    sly.logger.info(
+                        f"Autocorrecting the object (id: {obj.id}, geometry: {geometry_type})"
+                    )
+                else:
+                    info = f"Geometry type: {geometry_type}, object id: {object_id}"
+                    sly.logger.warning(f"Unable to autocorrect faulty annotation object. Skipping...", extra={'info': info})
+                geometries_figure_ids.append(object_id)
+                geometries_list.append(obj)
 
-    ann_json["objects"] = new_objects
-
-    return is_valid, ann_json
+    return tags_to_add, geometries_figure_ids, geometries_list
 
 
 def new_project_name(name: str) -> str:
@@ -119,6 +115,11 @@ def process_ds(
     Download annotations, validate them.
     If some labels are invalid, add tag to them and upload back to Supervisely
     """
+    if tag_name:
+        tag_meta = meta.get_tag_meta(tag_name)
+        tag_id = tag_meta.sly_id
+    else:
+        tag_id = None
     images_count = src_ds.images_count
     pbar_cb = sly.Progress(f"Processing '{src_ds.name}' dataset", images_count).iters_done_report
 
@@ -147,7 +148,7 @@ def process_ds(
                     is_downloading[idx] = False
                 return ann_cache[idx]
 
-            def _upload_annotations(idx, img_ids, anns):
+            def _upload_annotations(idx, img_ids, anns, validation_anns = None): # @TODO: fix validation_anns helter skelter
                 if idx in is_processing and is_processing[idx] or idx not in is_processing:
                     sly.logger.info(f"Waiting for annotation batch {idx} to be processed")
                     while idx not in is_processing or is_processing[idx]:
@@ -158,6 +159,12 @@ def process_ds(
                     img_ids = list(anns_to_upload[idx].keys())
                     anns = list(anns_to_upload[idx].values())
                     api.annotation.upload_jsons(img_ids, anns)
+
+                    if validation_anns:
+                        if isinstance(anns, tuple):
+                            api.image.figure.upload_geometries_batch(*anns)
+                        elif isinstance(anns, list):
+                            api.image.tag.add_to_objects(project_id, anns)
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
@@ -169,10 +176,19 @@ def process_ds(
 
                 sly.logger.info(f"Processing annotation batch {idx}")
                 is_processing[idx] = True
-                for image_id, ann_json in zip(batch_ids, batch_ann_json):
-                    is_valid, validated_ann = validate_annotation(ann_json, meta, tag_name)
-                    if not is_valid:
-                        anns_to_upload[idx][image_id] = validated_ann
+                batch_tags = []
+                batch_geometries = []
+                batch_figures = []
+                for ann_json in batch_ann_json:
+                    tags, figures, geometries = validate_annotation(ann_json, meta, tag_id)
+                    batch_tags.extend(tags)
+                    batch_figures.extend(figures)
+                    batch_geometries.extend(geometries)
+                if (len(batch_tags) > 0) and (len(batch_geometries) == 0):
+                    anns_to_upload[idx] = batch_tags
+                elif (len(batch_geometries) > 0) and (len(batch_tags) == 0):
+                    anns_to_upload[idx] = (batch_figures, batch_geometries)
+
                 is_processing[idx] = False
                 sly.logger.info(f"Finished processing annotation batch {idx}")
 
@@ -195,6 +211,8 @@ def process_ds_recursive(
     parent_id: Optional[int] = None,
 ) -> None:
     """Process dataset recursively (with nested datasets)"""
+    global project_id
+    project_id = dst_project_id
 
     dst_ds = api.dataset.create(dst_project_id, src_ds.name, parent_id=parent_id)
     process_ds(api, dst_ds, meta, src_ds, tag_name)
