@@ -175,8 +175,7 @@ def process_ds(
                         img_ids, ann_jsons = anns_to_upload[idx]
                         api.annotation.upload_jsons(img_ids, ann_jsons)
                     elif isinstance(anns_to_upload[idx], list):  # action: tagging
-                        tags_list = list(anns.values())[idx]
-                        tag_infos = api.image.tag.add_to_objects(project_id, tags_list)
+                        tag_infos = api.image.tag.add_to_objects(project_id, anns[idx])
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
@@ -192,7 +191,14 @@ def process_ds(
                 batch_anns = []  # List[Dict[...]]
                 for ann_json in batch_ann_json:
                     sly.logger.debug("Validaing annotations...")
-                    tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
+                    try:
+                        tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
+                    except Exception as e:
+
+                        sly.logger.error(
+                            f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}",
+                            extra={},  # todo
+                        )
                     batch_tags.extend(tags)
                     if validated_ann:
                         batch_anns.append(validated_ann)

@@ -45,7 +45,7 @@ def main():
     meta = sly.ProjectMeta.from_json(api.project.get_meta(src_project.id))
     if tag_name is not None:
         meta = meta.add_tag_meta(sly.TagMeta(tag_name, sly.TagValueType.NONE))
-        meta = api.project.update_meta(dst_project.id, meta)
+    meta = api.project.update_meta(dst_project.id, meta)
 
     # process datasets
     for src_ds, children in datasets_tree.items():

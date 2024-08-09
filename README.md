@@ -1,6 +1,6 @@
 <div align="center" markdown>
 
-<img src="xxx"/>
+<img src="https://github.com/user-attachments/assets/758eb893-bc1c-4ff5-aa06-286b18557cae"/>
 
 # Annotation Validator
 
