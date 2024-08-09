@@ -50,7 +50,7 @@ def validate_annotation(
                 if correction_func:
                     obj = correction_func(obj)
                     sly.logger.info(
-                        f"Autocorrecting the object (id: {obj["id"]}, geometry: {geometry_type})"
+                        f"Autocorrecting the object (id: {object_id}, geometry: {geometry_type})"
                     )
                     validated_objects.append(obj)
                 else:
@@ -60,7 +60,7 @@ def validate_annotation(
                         extra={"info": info},
                     )
     if len(validated_objects) > 0:
-        ann_json['objects'] = validated_objects
+        ann_json["objects"] = validated_objects
 
     return tags_to_add, ann_json
 
@@ -202,10 +202,10 @@ def process_ds(
                 )
 
                 if len(batch_tags) > 0:
-                    assert len(batch_anns) == 0 # for debug, delete later
+                    assert len(batch_anns) == 0  # for debug, delete later
                     anns_to_upload[idx] = batch_tags
                 elif len(batch_anns) > 0:
-                    assert len(batch_tags) == 0 # for debug, delete later
+                    assert len(batch_tags) == 0  # for debug, delete later
                     anns_to_upload[idx] = (batch_ids, batch_anns)
 
                 is_processing[idx] = False
