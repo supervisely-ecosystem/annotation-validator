@@ -3,12 +3,10 @@
   "type": "app",
   "version": "2.0.0",
   "categories": [
-    "system",
+    "images",
     "data operations",
-    "project management",
-    "images"
+    "project management"
   ],
-  "system": true,
   "description": "Validate annotations in a project",
   "docker_image": "supervisely/base-py-sdk:6.73.145",
   "min_instance_version": "6.10.0",
