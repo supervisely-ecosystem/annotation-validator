@@ -29,15 +29,7 @@
   "context_menu": {
     "target": [
       "images_project",
-      "videos_project",
-      "point_cloud_project",
-      "volumes_project",
-      "point_cloud_episodes_project",
-      "images_dataset",
-      "videos_dataset",
-      "point_cloud_dataset",
-      "volumes_dataset",
-      "point_cloud_episodes_dataset"
+      "images_dataset"
     ]
   },
   "poster": "https://github.com/user-attachments/assets/758eb893-bc1c-4ff5-aa06-286b18557cae"
