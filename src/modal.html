@@ -1,6 +1,6 @@
-<div>
-  <div>
-    <sly-field title="Action" description="Select what action should be applied to invalid annotations">
+<div style="display: flex; align-items: center; gap: 10px;">
+  <sly-field title="Action" description="Select what action should be applied to invalid annotations">
+    <div style="display: flex; align-items: center; gap: 10px;">
       <el-select v-model="state.action" placeholder="Select">
         <el-option
           key="tag"
@@ -13,9 +13,12 @@
           value="del"
         ></el-option>
       </el-select>
-    </sly-field>
-  </div>
-  <div v-if="state.action === 'tag'">
-    <el-input placeholder="Tag name" size="mini" v-model="state.tagName"></el-input>
-  </div>
+
+      <el-input
+        v-if="state.action === 'tag'"
+        placeholder="Tag name"
+        v-model="state.tagName"
+      ></el-input>
+    </div>
+  </sly-field>
 </div>
