@@ -26,7 +26,9 @@ def validate_annotation(
             )
         return False
 
+    validated_ann = None
     tags_to_add = []
+
     validated_objects = []
     for obj in ann_json.get("objects", []):
         geometry_type = obj.get("geometryType", "")
@@ -61,8 +63,9 @@ def validate_annotation(
                     )
     if len(validated_objects) > 0:
         ann_json["objects"] = validated_objects
+        validated_ann = ann_json
 
-    return tags_to_add, ann_json
+    return tags_to_add, validated_ann
 
 
 def new_project_name(name: str) -> str:
@@ -167,14 +170,13 @@ def process_ds(
                 if idx in anns_to_upload and anns_to_upload[idx]:
                     is_uploading[idx] = True
                     sly.logger.info(f"Uploading annotation batch {idx}")
-                    # img_ids = list(anns_to_upload[idx].keys())
-                    # anns = list(anns_to_upload[idx].values())
-                    # api.annotation.upload_jsons(img_ids, anns)
 
-                    if isinstance(anns, Tuple):  # action: correction
-                        api.annotation.upload_jsons(*anns)
-                    elif isinstance(anns, list):  # action: tagging
-                        api.image.tag.add_to_objects(project_id, anns)
+                    if isinstance(anns_to_upload[idx], Tuple):  # action: correction
+                        img_ids, ann_jsons = anns_to_upload[idx]
+                        api.annotation.upload_jsons(img_ids, ann_jsons)
+                    elif isinstance(anns_to_upload[idx], list):  # action: tagging
+                        tags_list = list(anns.values())[idx]
+                        tag_infos = api.image.tag.add_to_objects(project_id, tags_list)
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
@@ -192,7 +194,8 @@ def process_ds(
                     sly.logger.debug("Validaing annotations...")
                     tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
                     batch_tags.extend(tags)
-                    batch_anns.extend(validated_ann)
+                    if validated_ann:
+                        batch_anns.append(validated_ann)
                 sly.logger.debug(
                     "Anns retrieved after validation",
                     extra={
