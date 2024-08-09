@@ -51,7 +51,7 @@ def validate_annotation(
                 if correction_func:
                     obj = correction_func(obj)
                     sly.logger.info(
-                        f"Autocorrecting the object (id: {obj.id}, geometry: {geometry_type})"
+                        f"Autocorrecting the object (id: {obj["id"]}, geometry: {geometry_type})"
                     )
                     geometries_figure_ids.append(object_id)
                     geometries_list.append(obj)
