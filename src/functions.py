@@ -194,10 +194,15 @@ def process_ds(
                     try:
                         tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
                     except Exception as e:
-
+                        image_id = batch_ids[batch_ann_json.index(ann_json)]
+                        mode = "tagging" if tag_id else "correction"
                         sly.logger.error(
                             f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}",
-                            extra={},  # todo
+                            extra={
+                                "image id": image_id,
+                                "mode": mode,
+                                "json annotation": ann_json,
+                            },
                         )
                     batch_tags.extend(tags)
                     if validated_ann:
