@@ -56,10 +56,13 @@ def validate_annotation(
                     )
                     validated_objects.append(obj)
                 else:
-                    info = f"Geometry type: {geometry_type}, object id: {object_id}"
-                    sly.logger.warning(
-                        f"Unable to autocorrect faulty annotation object. Skipping...",
-                        extra={"info": info},
+                    # info = f"Geometry type: {geometry_type}, object id: {object_id}"
+                    # sly.logger.warning(
+                    #     f"Unable to autocorrect faulty annotation object. Skipping...",
+                    #     extra={"info": info},
+                    # )
+                    raise NotImplementedError(
+                        f"Unable to autocorrect faulty annotation object. Skipping..."
                     )
     if len(validated_objects) > 0:
         ann_json["objects"] = validated_objects
@@ -204,6 +207,7 @@ def process_ds(
                                 "json annotation": ann_json,
                             },
                         )
+                        continue
                     batch_tags.extend(tags)
                     if validated_ann:
                         batch_anns.append(validated_ann)
