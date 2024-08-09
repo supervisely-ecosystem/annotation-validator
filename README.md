@@ -9,13 +9,15 @@
   <a href="#How-To-Run">How To Run</a>
 </p>
 
-</div>
 
 [![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/annotation-validator)
 [![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervise.ly/slack)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/annotation-validator)
 [![views](https://app.supervise.ly/img/badges/views/supervisely-ecosystem/annotation-validator)](https://supervise.ly)
 [![runs](https://app.supervise.ly/img/badges/runs/supervisely-ecosystem/annotation-validator)](https://supervise.ly)
+
+</div>
+
 
 
 ## Overview
@@ -36,7 +38,6 @@ The application will correct invalid figures if possible, and delete if not.
 
 Step 1: Run the application from the Ecosystem, or from the context menu of a project/dataset
 
+Step 2: Specify the action to be applied to invalid annotation objects
 
-Step 2: In the modal window, you can specify the action to be applied, and the tag name (if tagging mode is selected)
-
-<img src="xxx"/>
+<img src="https://github.com/user-attachments/assets/206838da-a761-4728-9b2d-c6c41c9965b7"/>
