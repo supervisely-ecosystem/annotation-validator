@@ -9,7 +9,6 @@
   <a href="#How-To-Run">How To Run</a>
 </p>
 
-
 [![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/annotation-validator)
 [![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervise.ly/slack)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/annotation-validator)
@@ -26,13 +25,9 @@ The Image Annotation Validator is an application designed to validate the correc
 
 Application has two modes:
 
-- **Tagging**
+- **Tagging**: The annotation that fail to meet the criteria, will be marked with a tag.
 
-The annotation that fail to meet the criteria, will be marked with a tag.
-
-- **Autocorrect**
-
-The application will correct invalid figures if possible.
+- **Autocorrect**: The application will correct invalid figures if possible.
 
 ## How To Run
 
