@@ -30,9 +30,9 @@ Application has two modes:
 
 The annotation that fail to meet the criteria, will be marked with a tag.
 
-- **Try to Correct Figures**
+- **Autocorrect**
 
-The application will correct invalid figures if possible, and delete if not.
+The application will correct invalid figures if possible.
 
 ## How To Run
 
