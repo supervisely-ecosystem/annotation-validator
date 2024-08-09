@@ -27,8 +27,7 @@ def validate_annotation(
         return False
 
     tags_to_add = []
-    geometries_figure_ids = []
-    geometries_list = []
+    validated_objects = []
     for obj in ann_json.get("objects", []):
         geometry_type = obj.get("geometryType", "")
         object_id = obj.get("id", None)
@@ -53,16 +52,17 @@ def validate_annotation(
                     sly.logger.info(
                         f"Autocorrecting the object (id: {obj["id"]}, geometry: {geometry_type})"
                     )
-                    geometries_figure_ids.append(object_id)
-                    geometries_list.append(obj)
+                    validated_objects.append(obj)
                 else:
                     info = f"Geometry type: {geometry_type}, object id: {object_id}"
                     sly.logger.warning(
                         f"Unable to autocorrect faulty annotation object. Skipping...",
                         extra={"info": info},
                     )
+    if len(validated_objects) > 0:
+        ann_json['objects'] = validated_objects
 
-    return tags_to_add, geometries_figure_ids, geometries_list
+    return tags_to_add, ann_json
 
 
 def new_project_name(name: str) -> str:
@@ -171,8 +171,8 @@ def process_ds(
                     # anns = list(anns_to_upload[idx].values())
                     # api.annotation.upload_jsons(img_ids, anns)
 
-                    if isinstance(anns, tuple):  # action: correction
-                        api.image.figure.upload_geometries_batch(*anns)
+                    if isinstance(anns, Tuple):  # action: correction
+                        api.annotation.upload_jsons(*anns)
                     elif isinstance(anns, list):  # action: tagging
                         api.image.tag.add_to_objects(project_id, anns)
                     is_uploading[idx] = False
@@ -187,29 +187,26 @@ def process_ds(
                 sly.logger.info(f"Processing annotation batch {idx}")
                 is_processing[idx] = True
                 batch_tags = []  # List[Dict[str, int]]
-                batch_geometries = []  # List[Dict[...]]
-                batch_figure_ids = []  # List[int]
+                batch_anns = []  # List[Dict[...]]
                 for ann_json in batch_ann_json:
                     sly.logger.debug("Validaing annotations...")
-                    tags, figures, geometries = validate_annotation(ann_json, meta, tag_id)
+                    tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
                     batch_tags.extend(tags)
-                    batch_figure_ids.extend(figures)
-                    batch_geometries.extend(geometries)
+                    batch_anns.extend(validated_ann)
                 sly.logger.debug(
                     "Anns retrieved after validation",
                     extra={
                         "tags": batch_tags,
-                        "figures": batch_figure_ids,
-                        "geometries": batch_geometries,
+                        "anns": batch_anns,
                     },
                 )
 
                 if len(batch_tags) > 0:
-                    assert len(batch_geometries) == 0
+                    assert len(batch_anns) == 0 # for debug, delete later
                     anns_to_upload[idx] = batch_tags
-                elif len(batch_geometries) > 0:
-                    assert len(batch_tags) == 0
-                    anns_to_upload[idx] = (batch_figure_ids, batch_geometries)
+                elif len(batch_anns) > 0:
+                    assert len(batch_tags) == 0 # for debug, delete later
+                    anns_to_upload[idx] = (batch_ids, batch_anns)
 
                 is_processing[idx] = False
                 sly.logger.info(f"Finished processing annotation batch {idx}")

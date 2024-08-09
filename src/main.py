@@ -56,4 +56,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sly.main_wrapper("main", f.run_func_and_catch_exceptions(main))
+    sly.main_wrapper("main", f.run_func_and_catch_exceptions, main)
