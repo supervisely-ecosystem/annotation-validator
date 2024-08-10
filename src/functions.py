@@ -155,11 +155,11 @@ def process_ds(
 
             def _download_annotations(idx, img_ids):
                 if idx in is_downloading and is_downloading[idx]:
-                    sly.logger.info(f"Waiting for annotation batch {idx} to be downloaded")
+                    sly.logger.debug(f"Waiting for annotation batch {idx} to be downloaded")
                     while is_downloading[idx]:
                         time.sleep(0.1)
                 if idx not in ann_cache:
-                    sly.logger.info(f"Downloading annotation batch {idx}")
+                    sly.logger.debug(f"Downloading annotation batch {idx}")
                     is_downloading[idx] = True
                     ann_cache[idx] = api.annotation.download_json_batch(dst_ds.id, img_ids)
                     is_downloading[idx] = False
@@ -167,12 +167,12 @@ def process_ds(
 
             def _upload_annotations(idx, img_ids, anns):
                 if idx in is_processing and is_processing[idx] or idx not in is_processing:
-                    sly.logger.info(f"Waiting for annotation batch {idx} to be processed")
+                    sly.logger.debug(f"Waiting for annotation batch {idx} to be processed")
                     while idx not in is_processing or is_processing[idx]:
                         time.sleep(0.1)
                 if idx in anns_to_upload and anns_to_upload[idx]:
                     is_uploading[idx] = True
-                    sly.logger.info(f"Uploading annotation batch {idx}")
+                    sly.logger.debug(f"Uploading annotation batch {idx}")
 
                     if isinstance(anns_to_upload[idx], Tuple):  # action: correction
                         img_ids, ann_jsons = anns_to_upload[idx]
