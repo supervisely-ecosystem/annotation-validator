@@ -177,8 +177,11 @@ def process_ds(
                     if isinstance(anns_to_upload[idx], Tuple):  # action: correction
                         img_ids, ann_jsons = anns_to_upload[idx]
                         api.annotation.upload_jsons(img_ids, ann_jsons)
-                    elif isinstance(anns_to_upload[idx], list):  # action: tagging
-                        tag_infos = api.image.tag.add_to_objects(project_id, anns[idx])
+                    elif isinstance(anns_to_upload[idx], Dict):  # action: tagging
+                        figures = anns[idx]["figures"]
+                        imgs = anns[idx]["img"]
+                        response = api.image.tag.add_to_objects(project_id, figures)
+                        response = api.image.tag.append_to_entities_json(project_id, imgs)
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
@@ -190,14 +193,15 @@ def process_ds(
 
                 sly.logger.info(f"Processing annotation batch {idx}")
                 is_processing[idx] = True
-                batch_tags = []  # List[Dict[str, int]]
+                batch_figures = []
+                batch_imgids = []
                 batch_anns = []  # List[Dict[...]]
                 for ann_json in batch_ann_json:
                     sly.logger.debug("Validaing annotations...")
+                    image_id = batch_ids.get(batch_ann_json.index(ann_json))
                     try:
                         tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
                     except Exception as e:
-                        image_id = batch_ids[batch_ann_json.index(ann_json)]
                         mode = "tagging" if tag_id else "correction"
                         sly.logger.error(
                             f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}",
@@ -208,22 +212,24 @@ def process_ds(
                             },
                         )
                         continue
-                    batch_tags.extend(tags)
-                    if validated_ann:
+                    if len(tags) > 0:
+                        batch_figures.extend(tags)
+                        batch_imgids.append({"entityId": image_id, "tagId": tag_id})
+                    elif validated_ann:
                         batch_anns.append(validated_ann)
                 sly.logger.debug(
                     "Anns retrieved after validation",
                     extra={
-                        "tags": batch_tags,
+                        "tags": {"imgids": batch_imgids, "figures": batch_figures},
                         "anns": batch_anns,
                     },
                 )
 
-                if len(batch_tags) > 0:
-                    assert len(batch_anns) == 0  # for debug, delete later
-                    anns_to_upload[idx] = batch_tags
+                if len(batch_imgids) > 0:
+                    # assert len(batch_anns) == 0  # for debug, delete later
+                    anns_to_upload[idx] = {"img": batch_imgids, "figures": batch_figures}
                 elif len(batch_anns) > 0:
-                    assert len(batch_tags) == 0  # for debug, delete later
+                    # assert len(batch_tags) == 0  # for debug, delete later
                     anns_to_upload[idx] = (batch_ids, batch_anns)
 
                 is_processing[idx] = False
