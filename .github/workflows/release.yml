@@ -22,4 +22,3 @@ jobs:
       RELEASE_VERSION: "${{ github.event.release.tag_name }}"
       RELEASE_DESCRIPTION: "${{ github.event.release.name }}"
       RELEASE_TYPE: "release"
-      SUBAPP_PATHS: "annotation-tool, project-dataset"

@@ -16,4 +16,3 @@ jobs:
       RELEASE_VERSION: ""
       RELEASE_DESCRIPTION: ""
       RELEASE_TYPE: "publish"
-      SUBAPP_PATHS: "annotation-tool, project-dataset"
