@@ -179,9 +179,10 @@ def process_ds(
                         api.annotation.upload_jsons(img_ids, ann_jsons)
                     elif isinstance(anns_to_upload[idx], Dict):  # action: tagging
                         figures = anns[idx]["figures"]
-                        imgs = anns[idx]["img"]
+                        tag_id = anns[idx]["figures"][0]["tagId"]
+                        imgids = anns[idx]["img"]
                         response = api.image.tag.add_to_objects(project_id, figures)
-                        response = api.image.tag.append_to_entities_json(project_id, imgs)
+                        response = api.image.add_tag_batch(imgids, tag_id)
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
@@ -214,7 +215,7 @@ def process_ds(
                         continue
                     if len(tags) > 0:
                         batch_figures.extend(tags)
-                        batch_imgids.append({"entityId": image_id, "tagId": tag_id})
+                        batch_imgids.append(image_id)
                     elif validated_ann:
                         batch_anns.append(validated_ann)
                 sly.logger.debug(
@@ -227,7 +228,7 @@ def process_ds(
 
                 if len(batch_imgids) > 0:
                     # assert len(batch_anns) == 0  # for debug, delete later
-                    anns_to_upload[idx] = {"img": batch_imgids, "figures": batch_figures}
+                    anns_to_upload[idx] = {"tagId": batch_imgids, "figures": batch_figures}
                 elif len(batch_anns) > 0:
                     # assert len(batch_tags) == 0  # for debug, delete later
                     anns_to_upload[idx] = (batch_ids, batch_anns)
