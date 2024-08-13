@@ -182,7 +182,7 @@ def process_ds(
                         tag_id = anns[idx]["figures"][0]["tagId"]
                         imgids = anns[idx]["img"]
                         response = api.image.tag.add_to_objects(project_id, figures)
-                        response = api.image.add_tag_batch(imgids, tag_id)
+                        api.image.add_tag_batch(imgids, tag_id)
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
