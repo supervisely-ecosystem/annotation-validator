@@ -197,9 +197,8 @@ def process_ds(
                 batch_figures = []
                 batch_imgids = []
                 batch_anns = []  # List[Dict[...]]
-                for ann_json in batch_ann_json:
+                for image_id, ann_json in zip(batch_ids, batch_ann_json):
                     sly.logger.debug("Validaing annotations...")
-                    image_id = batch_ids[batch_ann_json.index(ann_json)]
                     try:
                         tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
                     except Exception as e:
