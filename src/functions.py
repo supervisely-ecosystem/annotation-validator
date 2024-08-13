@@ -177,12 +177,19 @@ def process_ds(
                     if isinstance(anns_to_upload[idx], Tuple):  # action: correction
                         img_ids, ann_jsons = anns_to_upload[idx]
                         api.annotation.upload_jsons(img_ids, ann_jsons)
+                        sly.logger.info(
+                            f"Successfully uploaded autocorrected annotations (image ids: {img_ids})"
+                        )
                     elif isinstance(anns_to_upload[idx], Dict):  # action: tagging
                         figures = anns[idx]["figures"]
                         tag_id = anns[idx]["figures"][0]["tagId"]
                         imgids = anns[idx]["img"]
                         response = api.image.tag.add_to_objects(project_id, figures)
                         api.image.add_tag_batch(imgids, tag_id)
+                        figure_ids = [figure["figureId"] for figure in figures]
+                        sly.logger.info(
+                            f"Added tags to images (ids: {imgids}) and objects (ids: {figure_ids})"
+                        )
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
