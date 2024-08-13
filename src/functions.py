@@ -192,7 +192,7 @@ def process_ds(
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
                 batch_ann_json = _download_annotations(idx, batch_ids)
 
-                sly.logger.info(f"Processing annotation batch {idx}")
+                sly.logger.debug(f"Processing annotation batch {idx}")
                 is_processing[idx] = True
                 batch_figures = []
                 batch_imgids = []
@@ -233,7 +233,7 @@ def process_ds(
                     anns_to_upload[idx] = (batch_ids, batch_anns)
 
                 is_processing[idx] = False
-                sly.logger.info(f"Finished processing annotation batch {idx}")
+                sly.logger.debug(f"Finished processing annotation batch {idx}")
 
             pbar_cb(len(dst_imgs_ids))
 
