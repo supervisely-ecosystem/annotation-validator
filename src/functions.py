@@ -199,7 +199,7 @@ def process_ds(
                 batch_anns = []  # List[Dict[...]]
                 for ann_json in batch_ann_json:
                     sly.logger.debug("Validaing annotations...")
-                    image_id = batch_ids.get(batch_ann_json.index(ann_json))
+                    image_id = batch_ids[batch_ann_json.index(ann_json)]
                     try:
                         tags, validated_ann = validate_annotation(ann_json, meta, tag_id)
                     except Exception as e:
@@ -228,7 +228,7 @@ def process_ds(
 
                 if len(batch_imgids) > 0:
                     # assert len(batch_anns) == 0  # for debug, delete later
-                    anns_to_upload[idx] = {"tagId": batch_imgids, "figures": batch_figures}
+                    anns_to_upload[idx] = {"img": batch_imgids, "figures": batch_figures}
                 elif len(batch_anns) > 0:
                     # assert len(batch_tags) == 0  # for debug, delete later
                     anns_to_upload[idx] = (batch_ids, batch_anns)
