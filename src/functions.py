@@ -126,6 +126,7 @@ def process_ds(
     meta: sly.ProjectMeta,
     src_ds: sly.Dataset,
     tag_name: str,
+    save_source_date: bool,
 ) -> None:
     """
     Process dataset.
@@ -150,7 +151,14 @@ def process_ds(
             is_uploading: Dict[int, bool] = {}
             ann_cache = {}
             anns_to_upload: Dict[int, Dict] = defaultdict(dict)
-            dst_imgs = api.image.copy_batch_optimized(src_ds.id, batch_imgs, dst_ds.id)
+            try:
+                dst_imgs = api.image.copy_batch_optimized(
+                    src_ds.id, batch_imgs, dst_ds.id, save_source_date=save_source_date
+                )
+            except Exception as e:
+                from requests.exceptions import HTTPError
+
+                raise HTTPError(f"Error copying the images. Message: {repr(e)}")
             dst_imgs_ids = [image_info.id for image_info in dst_imgs]
 
             def _download_annotations(idx, img_ids):
@@ -263,6 +271,7 @@ def process_ds_recursive(
     meta: sly.ProjectMeta,
     src_ds: sly.Dataset,
     tag_name: str,
+    save_source_date: bool,
     children: Optional[Dict] = None,
     parent_id: Optional[int] = None,
 ) -> None:
@@ -271,11 +280,19 @@ def process_ds_recursive(
     project_id = dst_project_id
 
     dst_ds = api.dataset.create(dst_project_id, src_ds.name, parent_id=parent_id)
-    process_ds(api, dst_ds, meta, src_ds, tag_name)
+    save_source_date,
+    process_ds(api, dst_ds, meta, src_ds, tag_name, save_source_date)
     if children:
         for src_child_ds, child_children in children.items():
             process_ds_recursive(
-                api, dst_project_id, meta, src_child_ds, tag_name, child_children, dst_ds.id
+                api,
+                dst_project_id,
+                meta,
+                src_child_ds,
+                tag_name,
+                save_source_date,
+                child_children,
+                dst_ds.id,
             )
 
 

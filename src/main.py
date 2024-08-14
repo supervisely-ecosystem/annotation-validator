@@ -17,6 +17,7 @@ def main():
     project_id = sly.env.project_id()
     dataset_id = sly.env.dataset_id(raise_not_found=False)
     action = os.environ.get("modal.state.action")
+    save_source_date = os.environ.get("modal.state.source")
     if action == "tag":
         tag_name = os.environ.get("modal.state.tagName", None)
         if tag_name is None or tag_name == "":
@@ -49,7 +50,9 @@ def main():
 
     # process datasets
     for src_ds, children in datasets_tree.items():
-        f.process_ds_recursive(api, dst_project.id, meta, src_ds, tag_name, children)
+        f.process_ds_recursive(
+            api, dst_project.id, meta, src_ds, tag_name, save_source_date, children
+        )
 
     # set project to task output
     api.task.set_output_project(sly.env.task_id(), dst_project.id)

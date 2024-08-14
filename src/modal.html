@@ -1,3 +1,4 @@
+<div>
 <div style="display: flex; align-items: center; gap: 10px;">
   <sly-field title="Action" description="Select what action should be applied to invalid annotations">
     <div style="display: flex; align-items: center; gap: 10px;">
@@ -21,4 +22,10 @@
       ></el-input>
     </div>
   </sly-field>
+</div>
+<div style="display: flex; align-items: center; gap: 10px;">
+    <sly-field title="Preserve source date" description="Preserve original date and author when copying images">
+    </sly-field>
+    <el-checkbox v-model='state.source'></el-checkbox>
+</div>
 </div>

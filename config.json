@@ -16,7 +16,8 @@
     "projectName": "",
     "datasetName": "",
     "action": "tag",
-    "tagName": ""
+    "tagName": "",
+    "source": true
   },
   "task_location": "workspace_tasks",
   "isolate": true,
