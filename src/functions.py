@@ -6,6 +6,7 @@ from typing import Callable, Dict, Optional, Tuple
 import supervisely as sly
 from src.validation_functions import get_validation_func
 from src.correction_functions import get_correction_func
+from requests.exceptions import HTTPError
 
 
 def validate_annotation(
@@ -155,10 +156,14 @@ def process_ds(
                 dst_imgs = api.image.copy_batch_optimized(
                     src_ds.id, batch_imgs, dst_ds.id, save_source_date=save_source_date
                 )
+            except HTTPError as he:
+                if "Some users are not members of the destination group" in str(he):
+                    message = "One of the users cannot be added to annotation, as he is not a member of the destination group. Try to uncheck 'Preserve source date' checkbox in the modal window, and re-run the app."
+                    raise HTTPError(message) from he
+                else:
+                    raise he
             except Exception as e:
-                from requests.exceptions import HTTPError
-
-                raise HTTPError(f"Error copying the images. Message: {repr(e)}")
+                raise e
             dst_imgs_ids = [image_info.id for image_info in dst_imgs]
 
             def _download_annotations(idx, img_ids):
