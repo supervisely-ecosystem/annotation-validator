@@ -280,7 +280,6 @@ def process_ds_recursive(
     project_id = dst_project_id
 
     dst_ds = api.dataset.create(dst_project_id, src_ds.name, parent_id=parent_id)
-    save_source_date,
     process_ds(api, dst_ds, meta, src_ds, tag_name, save_source_date)
     if children:
         for src_child_ds, child_children in children.items():
