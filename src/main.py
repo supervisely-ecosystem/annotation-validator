@@ -17,7 +17,7 @@ def main():
     project_id = sly.env.project_id()
     dataset_id = sly.env.dataset_id(raise_not_found=False)
     action = os.environ.get("modal.state.action")
-    save_source_date = os.environ.get("modal.state.source")
+    save_source_date = bool(os.environ.get("modal.state.source"))
     if action == "tag":
         tag_name = os.environ.get("modal.state.tagName", None)
         if tag_name is None or tag_name == "":

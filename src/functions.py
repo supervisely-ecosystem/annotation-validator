@@ -157,9 +157,9 @@ def process_ds(
                     src_ds.id, batch_imgs, dst_ds.id, save_source_date=save_source_date
                 )
             except HTTPError as he:
-                if "Some users are not members of the destination group" in str(he):
+                if "Some users are not members of the destination group" in he.response.text:
                     message = "One of the users cannot be added to annotation, as he is not a member of the destination group. Try to uncheck 'Preserve source date' checkbox in the modal window, and re-run the app."
-                    raise HTTPError(message)
+                    raise HTTPError(message, response=he.response)
                 else:
                     raise he
             except Exception as e:
