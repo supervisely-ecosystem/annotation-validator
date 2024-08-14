@@ -159,7 +159,7 @@ def process_ds(
             except HTTPError as he:
                 if "Some users are not members of the destination group" in str(he):
                     message = "One of the users cannot be added to annotation, as he is not a member of the destination group. Try to uncheck 'Preserve source date' checkbox in the modal window, and re-run the app."
-                    raise HTTPError(message) from he
+                    raise HTTPError(message)
                 else:
                     raise he
             except Exception as e:
