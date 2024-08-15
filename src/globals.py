@@ -25,9 +25,9 @@ api = sly.Api()
 project_id = sly.env.project_id()
 dataset_id = sly.env.dataset_id(raise_not_found=False)
 workspace_id = sly.env.workspace_id()
-task_id = sly.env.task_id()
+task_id = sly.env.task_id(raise_not_found=False)  # flag for debug, delete later
 tag_name = _get_tag_name()
 
 team_id = api.project.get_info_by_id(project_id).team_id
-team_members = api.user.get_team_members(team_id)
+team_members = [user.login for user in api.user.get_team_members(team_id)]
 user_self_login = api.user.get_my_info()

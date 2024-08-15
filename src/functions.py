@@ -6,7 +6,8 @@ from typing import Callable, Dict, Optional, Tuple
 import supervisely as sly
 from src.validation_functions import get_validation_func
 from src.correction_functions import get_correction_func
-from requests.exceptions import HTTPError
+
+# from requests.exceptions import HTTPError
 import src.globals as g
 
 
@@ -31,11 +32,12 @@ def validate_annotation(
     def _validate_labeler_login(labeler_login):
         if labeler_login not in g.team_members:
             sly.logger.warn(
-                f"Labeler '{labeler_login}' is not a member of the destination group. Replacing annotation's author with '{g.user_self_login}'"
+                f"Labeler '{labeler_login}' is not a member of the destination group. Replacing label's author with '{g.user_self_login}'"
             )
             return g.user_self_login
         return labeler_login
 
+    validated_ann = ann_json
     validated_objects = []
     for obj in ann_json.get("objects", []):
         obj["labelerLogin"] = _validate_labeler_login(obj["labelerLogin"])
@@ -63,9 +65,8 @@ def validate_annotation(
                         f"Unable to autocorrect faulty annotation object. Skipping label..."
                     )
         validated_objects.append(obj)
-    ann_json["objects"] = validated_objects
-
-    return ann_json
+    validated_ann["objects"] = validated_objects
+    return validated_ann
 
 
 def new_project_name(name: str) -> str:
@@ -117,6 +118,7 @@ def process_ds(
             is_uploading: Dict[int, bool] = {}
             ann_cache = {}
             anns_to_upload: Dict[int, Dict] = defaultdict(dict)
+
             batch_img_names = [img.name for img in batch_imgs]
             batch_img_ids = [img.id for img in batch_imgs]
             dst_imgs = api.image.upload_ids(dst_ds.id, batch_img_names, batch_img_ids)
@@ -130,7 +132,7 @@ def process_ds(
                 if idx not in ann_cache:
                     sly.logger.debug(f"Downloading annotation batch {idx}")
                     is_downloading[idx] = True
-                    ann_cache[idx] = api.annotation.download_json_batch(dst_ds.id, img_ids)
+                    ann_cache[idx] = api.annotation.download_json_batch(src_ds.id, img_ids)
                     is_downloading[idx] = False
                 return ann_cache[idx]
 
@@ -142,16 +144,18 @@ def process_ds(
                 if idx in anns_to_upload and anns_to_upload[idx]:
                     is_uploading[idx] = True
                     sly.logger.info(f"Uploading annotation batch {idx}")
-                    img_ids = list(anns_to_upload[idx].keys())
+                    # img_ids = list(anns_to_upload[idx].keys())
                     anns = list(anns_to_upload[idx].values())
                     api.annotation.upload_jsons(img_ids, anns)
                     is_uploading[idx] = False
 
-            for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
+            for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
                 download_executor.submit(_download_annotations, idx, batch_ids)
-                upload_executor.submit(_upload_annotations, idx, batch_ids, anns_to_upload)
 
             for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
+                upload_executor.submit(_upload_annotations, idx, batch_ids, anns_to_upload)
+
+            for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
                 batch_ann_json = _download_annotations(idx, batch_ids)
 
                 sly.logger.debug(f"Processing annotation batch {idx}")
@@ -160,7 +164,7 @@ def process_ds(
                     sly.logger.debug("Validaing annotations...")
                     try:
                         validated_ann = validate_annotation(ann_json, meta, tag)
-                        anns_to_upload[idx][image_id] = validated_ann
+                        anns_to_upload[idx] = validated_ann
                     except Exception as e:
                         # ann_json = e.ann_json
                         mode = "tagging" if tag else "correction"
