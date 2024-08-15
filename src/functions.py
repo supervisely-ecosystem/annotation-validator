@@ -160,6 +160,7 @@ def process_ds(
                     sly.logger.debug("Validaing annotations...")
                     try:
                         validated_ann = validate_annotation(ann_json, meta, tag)
+                        anns_to_upload[idx][image_id] = validated_ann
                     except Exception as e:
                         # ann_json = e.ann_json
                         mode = "tagging" if tag else "correction"
@@ -170,10 +171,8 @@ def process_ds(
                                 "mode": mode,
                                 "json annotation": ann_json,
                             },
-                        )
-                        validated_ann = ann_json
-                    finally:
-                        anns_to_upload[idx][image_id] = validated_ann
+                        )  # skip уточнить
+                        continue
                 is_processing[idx] = False
                 sly.logger.debug(f"Finished processing annotation batch {idx}")
 

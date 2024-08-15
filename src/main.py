@@ -1,7 +1,4 @@
-import os
-
 import supervisely as sly
-from dotenv import load_dotenv
 
 import src.functions as f
 import src.globals as g
