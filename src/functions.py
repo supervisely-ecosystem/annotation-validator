@@ -48,24 +48,27 @@ def validate_annotation(
 
         if not _deserialization_check(obj, meta) or (validation_func and not validation_func(obj)):
             sly.logger.debug("FOUND INVALID OBJECT")
+            if correction_func:
+                obj = correction_func(obj)
+                sly.logger.info(
+                    f"Autocorrecting the object (id: {obj['id']}, geometry: {geometry_type})"
+                )
+            else:
+                raise NotImplementedError(
+                    f"Unable to autocorrect faulty annotation object. Skipping label..."
+                )
             if tag:
                 obj_tags = obj.get("tags", None)
                 if obj_tags is None:
                     obj_tags = []
                 obj_tags.append(tag)
                 obj["tags"] = obj_tags
-            else:
-                if correction_func:
-                    obj = correction_func(obj)
-                    sly.logger.info(
-                        f"Autocorrecting the object (id: {obj['id']}, geometry: {geometry_type})"
-                    )
-                else:
-                    raise NotImplementedError(
-                        f"Unable to autocorrect faulty annotation object. Skipping label..."
-                    )
         validated_objects.append(obj)
     validated_ann["objects"] = validated_objects
+    if tag:
+        ann_tags = ann_json["tags"]
+        ann_tags.append(tag)
+        validated_ann["tags"] = ann_tags
     return validated_ann
 
 
@@ -146,6 +149,9 @@ def process_ds(
                     sly.logger.info(f"Uploading annotation batch {idx}")
                     # img_ids = list(anns_to_upload[idx].keys())
                     anns = list(anns_to_upload[idx].values())
+
+                    if len(anns_to_upload) == 1:
+                        anns = [anns_to_upload[idx]]
                     api.annotation.upload_jsons(img_ids, anns)
                     is_uploading[idx] = False
 
