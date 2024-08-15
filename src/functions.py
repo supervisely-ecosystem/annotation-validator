@@ -173,7 +173,7 @@ def process_ds(
                         )
                         validated_ann = ann_json
                     finally:
-                        anns_to_upload[idx] = validated_ann
+                        anns_to_upload[idx][image_id] = validated_ann
                 is_processing[idx] = False
                 sly.logger.debug(f"Finished processing annotation batch {idx}")
 
