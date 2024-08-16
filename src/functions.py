@@ -57,9 +57,7 @@ def validate_annotation(
                     f"Unable to autocorrect faulty annotation object. Skipping label..."
                 )
             if tag:
-                obj_tags = obj.get("tags", None)
-                if obj_tags is None:
-                    obj_tags = []
+                obj_tags = obj.get("tags", [])
                 obj_tags.append(tag)
                 obj["tags"] = obj_tags
         validated_objects.append(obj)
@@ -172,8 +170,15 @@ def process_ds(
                         error_msg = f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}"
                         extra = {"image id": image_id}
                         sly.logger.error(error_msg, extra=extra)
+
+                        def _get_image_size(image_id):
+                            im_info = api.image.get_info_by_id(image_id)
+                            return (im_info.height, im_info.width)
+
+                        blank_ann = sly.Annotation(_get_image_size(image_id))
+                        batch_validated_anns.append(blank_ann)
                         continue
-                anns_to_upload[idx] = validated_ann
+                anns_to_upload[idx] = batch_validated_anns
                 is_processing[idx] = False
                 sly.logger.debug(f"Finished processing annotation batch {idx}")
 
