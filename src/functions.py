@@ -146,9 +146,9 @@ def process_ds(
                 if idx in anns_to_upload and anns_to_upload[idx]:
                     is_uploading[idx] = True
                     sly.logger.debug(f"Uploading annotation batch {idx}")
-                    anns = list(anns_to_upload[idx])
+                    anns_list = anns_to_upload[idx]
 
-                    api.annotation.upload_jsons(img_ids, anns)
+                    api.annotation.upload_jsons(img_ids, anns_list)
                     is_uploading[idx] = False
 
             for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
@@ -160,18 +160,20 @@ def process_ds(
             for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
                 batch_ann_json = _download_annotations(idx, batch_ids)
 
+                batch_validated_anns = []
                 sly.logger.debug(f"Processing annotation batch {idx}")
                 is_processing[idx] = True
                 for image_id, ann_json in zip(batch_ids, batch_ann_json):
                     sly.logger.debug("Validaing annotations...")
                     try:
                         validated_ann = validate_annotation(ann_json, meta, tag)
-                        anns_to_upload[idx] = validated_ann
+                        batch_validated_anns.append(validated_ann)
                     except Exception as e:
                         error_msg = f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}"
                         extra = {"image id": image_id}
                         sly.logger.error(error_msg, extra=extra)
                         continue
+                anns_to_upload[idx] = validated_ann
                 is_processing[idx] = False
                 sly.logger.debug(f"Finished processing annotation batch {idx}")
 
