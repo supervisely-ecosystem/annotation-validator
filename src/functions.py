@@ -125,8 +125,7 @@ def process_ds(
             dst_imgs_ids = [imginfo.id for imginfo in dst_imgs]
 
             def _get_blank_json_ann(ann_json):
-                size = ann_json["size"]
-                return sly.Annotation(size).to_json()
+                return sly.Annotation(ann_json["size"]).to_json()
 
             def _download_annotations(idx, img_ids):
                 if idx in is_downloading and is_downloading[idx]:
@@ -175,7 +174,7 @@ def process_ds(
                         extra = {"image id": image_id}
                         sly.logger.error(error_msg, extra=extra)
 
-                        batch_validated_anns.append(_get_blank_json_ann(image_id))
+                        batch_validated_anns.append(_get_blank_json_ann(ann_json))
                         continue
                 anns_to_upload[idx] = batch_validated_anns
                 is_processing[idx] = False
