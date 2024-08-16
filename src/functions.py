@@ -140,16 +140,14 @@ def process_ds(
 
             def _upload_annotations(idx, img_ids, anns):
                 if idx in is_processing and is_processing[idx] or idx not in is_processing:
-                    sly.logger.info(f"Waiting for annotation batch {idx} to be processed")
+                    sly.logger.debug(f"Waiting for annotation batch {idx} to be processed")
                     while idx not in is_processing or is_processing[idx]:
                         time.sleep(0.1)
                 if idx in anns_to_upload and anns_to_upload[idx]:
                     is_uploading[idx] = True
-                    sly.logger.info(f"Uploading annotation batch {idx}")
-                    anns = list(anns_to_upload[idx].values())
+                    sly.logger.debug(f"Uploading annotation batch {idx}")
+                    anns = list(anns_to_upload[idx])
 
-                    if len(anns_to_upload) == 1:
-                        anns = [anns_to_upload[idx]]
                     api.annotation.upload_jsons(img_ids, anns)
                     is_uploading[idx] = False
 
