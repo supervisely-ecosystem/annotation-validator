@@ -124,6 +124,11 @@ def process_ds(
             dst_imgs = api.image.upload_ids(dst_ds.id, batch_img_names, batch_img_ids)
             dst_imgs_ids = [imginfo.id for imginfo in dst_imgs]
 
+            def _get_blank_json_ann(image_id):
+                im_info = api.image.get_info_by_id(image_id)
+                dimentions = (im_info.height, im_info.width)
+                return sly.Annotation(dimentions).to_json()
+
             def _download_annotations(idx, img_ids):
                 if idx in is_downloading and is_downloading[idx]:
                     sly.logger.debug(f"Waiting for annotation batch {idx} to be downloaded")
@@ -170,11 +175,6 @@ def process_ds(
                         error_msg = f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}"
                         extra = {"image id": image_id}
                         sly.logger.error(error_msg, extra=extra)
-
-                        def _get_blank_json_ann(image_id):
-                            im_info = api.image.get_info_by_id(image_id)
-                            dimentions = (im_info.height, im_info.width)
-                            return sly.Annotation(dimentions).to_json()
 
                         batch_validated_anns.append(_get_blank_json_ann(image_id))
                         continue
