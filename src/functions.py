@@ -171,12 +171,12 @@ def process_ds(
                         extra = {"image id": image_id}
                         sly.logger.error(error_msg, extra=extra)
 
-                        def _get_image_size(image_id):
+                        def _get_blank_json_ann(image_id):
                             im_info = api.image.get_info_by_id(image_id)
-                            return (im_info.height, im_info.width)
+                            dimentions = (im_info.height, im_info.width)
+                            return sly.Annotation(dimentions).to_json()
 
-                        blank_ann = sly.Annotation(_get_image_size(image_id))
-                        batch_validated_anns.append(blank_ann)
+                        batch_validated_anns.append(_get_blank_json_ann(image_id))
                         continue
                 anns_to_upload[idx] = batch_validated_anns
                 is_processing[idx] = False
