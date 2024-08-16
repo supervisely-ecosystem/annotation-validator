@@ -7,7 +7,6 @@ import supervisely as sly
 from src.validation_functions import get_validation_func
 from src.correction_functions import get_correction_func
 
-# from requests.exceptions import HTTPError
 import src.globals as g
 
 
@@ -147,7 +146,6 @@ def process_ds(
                 if idx in anns_to_upload and anns_to_upload[idx]:
                     is_uploading[idx] = True
                     sly.logger.info(f"Uploading annotation batch {idx}")
-                    # img_ids = list(anns_to_upload[idx].keys())
                     anns = list(anns_to_upload[idx].values())
 
                     if len(anns_to_upload) == 1:
@@ -172,16 +170,9 @@ def process_ds(
                         validated_ann = validate_annotation(ann_json, meta, tag)
                         anns_to_upload[idx] = validated_ann
                     except Exception as e:
-                        # ann_json = e.ann_json
-                        mode = "tagging" if tag else "correction"
-                        sly.logger.error(
-                            f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}",
-                            extra={
-                                "image id": image_id,
-                                "mode": mode,
-                                "json annotation": ann_json,
-                            },
-                        )  # skip уточнить
+                        error_msg = f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}"
+                        extra = {"image id": image_id}
+                        sly.logger.error(error_msg, extra=extra)
                         continue
                 is_processing[idx] = False
                 sly.logger.debug(f"Finished processing annotation batch {idx}")
