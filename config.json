@@ -15,7 +15,7 @@
   "modal_template_state": {
     "projectName": "",
     "datasetName": "",
-    "action": "tag",
+    "tag": true,
     "tagName": ""
   },
   "task_location": "workspace_tasks",

@@ -8,16 +8,14 @@ if sly.is_development():
 
 
 def _get_tag_name():
-    action = os.environ.get("modal.state.action")
-    if action == "tag":
+    use_tag = bool(os.environ.get("modal.state.tag"))
+    if use_tag:
         tag_name = os.environ.get("modal.state.tagName", None)
         if tag_name is None or tag_name == "":
-            tag_name = "need validation"
-    elif action == "del":
-        tag_name = None
-    elif action is None:
-        raise ValueError("Action cannot be obtained from environment.")
-    return tag_name
+            tag_name = "Invalid Annotation"
+        return tag_name
+    else:
+        return None
 
 
 api = sly.Api()
