@@ -21,18 +21,12 @@
 
 ## Overview
 
-The Image Annotation Validator is an application designed to validate the correctness of image annotations within a project. This tool iterates through the specified project and associated datasets (including nested datasets), ensuring that each image's annotations meet predefined criteria. The app does not make any changes to the original project, all the changes are being made in a duplicated project.
+The Image Annotation Validator is an application designed to autocorrect the invalid image annotations within a project. This tool iterates through the specified project and associated datasets (including nested datasets), ensuring that each image's annotations meet predefined criteria. The app does not make any changes to the original project, all the changes are being made in a duplicated project. 
 
-Application has two modes:
-
-- **Tagging**: The annotation that fail to meet the criteria, will be marked with a tag.
-
-- **Autocorrect**: The application will correct invalid figures if possible.
+The app also tags the annotation objects and the image which contains them with a tag. This functionality can be toggled in the modal window.
 
 ## How To Run
 
-Step 1: Run the application from the Ecosystem, or from the context menu of a project/dataset
+Run the application from the Ecosystem, or from the context menu of a project/dataset
 
-Step 2: Specify the action to be applied to invalid annotation objects
-
-<img src="https://github.com/user-attachments/assets/206838da-a761-4728-9b2d-c6c41c9965b7"/>
+<img src="https://github.com/user-attachments/assets/d49498b1-264b-45dd-aaac-8de9fd5e8681"/>

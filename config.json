@@ -15,8 +15,8 @@
   "modal_template_state": {
     "projectName": "",
     "datasetName": "",
-    "action": "tag",
-    "tagName": ""
+    "tag": true,
+    "tagName": "Corrected Annotation"
   },
   "task_location": "workspace_tasks",
   "isolate": true,

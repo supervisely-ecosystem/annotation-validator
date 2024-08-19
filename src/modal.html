@@ -1,24 +1,10 @@
 <div style="display: flex; align-items: center; gap: 10px;">
-  <sly-field title="Action" description="Select what action should be applied to invalid annotations">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <el-select v-model="state.action" placeholder="Select">
-        <el-option
-          key="tag"
-          label="Add Tag"
-          value="tag"
-        ></el-option>
-        <el-option
-          key="del"
-          label="Autocorrect"
-          value="del"
-        ></el-option>
-      </el-select>
-
-      <el-input
-        v-if="state.action === 'tag'"
+    <div style="display: flex; align-items: center; gap: 10px;"> 
+    <el-checkbox v-model="state.tag"> Apply Tag to Corrected Annotations </el-checkbox>
+    <el-input      
+        v-if="state.tag === true"
         placeholder="Tag name"
         v-model="state.tagName"
-      ></el-input>
-    </div>
-  </sly-field>
+      > </el-input>
+      </div>
 </div>
