@@ -76,6 +76,24 @@ def new_project_name(name: str) -> str:
     return f"{name} ({suffix})" if " " in name else f"{name}_{suffix}"
 
 
+def get_free_tag_name(tag_name: str, meta: sly.ProjectMeta):
+    if tag_name is None:
+        return None
+
+    existing_tag_names = [tagmeta.name for tagmeta in meta.tag_metas.items()]
+
+    if tag_name not in existing_tag_names:
+        return tag_name
+
+    suffix = 1
+    new_tag_name = f"{tag_name}_{suffix}"
+    while new_tag_name in existing_tag_names:
+        suffix += 1
+        new_tag_name = f"{tag_name}_{suffix}"
+
+    return new_tag_name
+
+
 def find_destination_dataset_tree(tree: Dict, needed_dataset_id: int) -> Optional[Dict]:
     """Find destination dataset tree by dataset id"""
 

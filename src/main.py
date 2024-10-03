@@ -22,13 +22,14 @@ def main():
 
     # prepare destination project meta
     meta = sly.ProjectMeta.from_json(g.api.project.get_meta(src_project.id))
+    tag_name = f.get_free_tag_name(g.tag_name, meta)
     if g.tag_name is not None:
-        meta = meta.add_tag_meta(sly.TagMeta(g.tag_name, sly.TagValueType.NONE))
+        meta = meta.add_tag_meta(sly.TagMeta(tag_name, sly.TagValueType.NONE))
     meta = g.api.project.update_meta(dst_project.id, meta)
 
     # process datasets
     for src_ds, children in datasets_tree.items():
-        f.process_ds_recursive(g.api, dst_project.id, meta, src_ds, g.tag_name, children)
+        f.process_ds_recursive(g.api, dst_project.id, meta, src_ds, tag_name, children)
 
     # set project to task output
     g.api.task.set_output_project(g.task_id, dst_project.id)
