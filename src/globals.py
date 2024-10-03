@@ -12,7 +12,7 @@ def _get_tag_name():
     if use_tag:
         tag_name = os.environ.get("modal.state.tagName", None)
         if tag_name is None or tag_name == "":
-            tag_name = "Invalid Annotation"
+            tag_name = "Corrected Annotation"
         return tag_name
     else:
         return None
