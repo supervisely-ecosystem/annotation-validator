@@ -29,3 +29,4 @@ tag_name = _get_tag_name()
 team_id = api.project.get_info_by_id(project_id).team_id
 team_members = [user.login for user in api.user.get_team_members(team_id)]
 user_self_login = api.user.get_my_info()
+project_type = None
