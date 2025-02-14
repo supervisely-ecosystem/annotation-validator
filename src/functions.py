@@ -4,10 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, Optional, Tuple
 
 import supervisely as sly
-from src.validation_functions import get_validation_func
-from src.correction_functions import get_correction_func
 
 import src.globals as g
+from src.correction_functions import get_correction_func
+from src.validation_functions import get_validation_func
 
 
 def validate_annotation(
@@ -108,9 +108,9 @@ def find_destination_dataset_tree(tree: Dict, needed_dataset_id: int) -> Optiona
 
 def process_ds(
     api: sly.Api,
-    dst_ds: sly.Dataset,
+    dst_ds: sly.DatasetInfo,
     meta: sly.ProjectMeta,
-    src_ds: sly.Dataset,
+    src_ds: sly.DatasetInfo,
     tag_name: str,
 ) -> None:
     """
@@ -118,99 +118,136 @@ def process_ds(
     Download annotations, validate them.
     If some labels are invalid, add tag to them and upload back to Supervisely
     """
-    if tag_name:
-        tag_meta = meta.get_tag_meta(tag_name)
-        tag = sly.Tag(tag_meta).to_json()
+    if g.project_type == "images":
+        if tag_name:
+            tag_meta = meta.get_tag_meta(tag_name)
+            tag = sly.Tag(tag_meta).to_json()
+        else:
+            tag = None
+        images_count = src_ds.images_count
+        pbar_cb = sly.Progress(
+            f"Processing '{src_ds.name}' dataset", images_count
+        ).iters_done_report
+
+        # iterate by generator to avoid memory overflow
+        for batch_imgs in api.image.get_list_generator(src_ds.id, batch_size=500):
+            download_executor = ThreadPoolExecutor(max_workers=10)
+            upload_executor = ThreadPoolExecutor(max_workers=4)
+            try:
+                is_downloading: Dict[int, bool] = {}
+                is_processing: Dict[int, bool] = {}
+                is_uploading: Dict[int, bool] = {}
+                ann_cache = {}
+                anns_to_upload: Dict[int, Dict] = defaultdict(dict)
+
+                batch_img_names = [img.name for img in batch_imgs]
+                batch_img_ids = [img.id for img in batch_imgs]
+                dst_imgs = api.image.upload_ids(dst_ds.id, batch_img_names, batch_img_ids)
+                dst_imgs_ids = [imginfo.id for imginfo in dst_imgs]
+
+                def _get_blank_json_ann(ann_json):
+                    return sly.Annotation(ann_json["size"]).to_json()
+
+                def _download_annotations(idx, img_ids):
+                    if idx in is_downloading and is_downloading[idx]:
+                        sly.logger.debug(f"Waiting for annotation batch {idx} to be downloaded")
+                        while is_downloading[idx]:
+                            time.sleep(0.1)
+                    if idx not in ann_cache:
+                        sly.logger.debug(f"Downloading annotation batch {idx}")
+                        is_downloading[idx] = True
+                        ann_cache[idx] = api.annotation.download_json_batch(src_ds.id, img_ids)
+                        is_downloading[idx] = False
+                    return ann_cache[idx]
+
+                def _upload_annotations(idx, img_ids, anns):
+                    if idx in is_processing and is_processing[idx] or idx not in is_processing:
+                        sly.logger.debug(f"Waiting for annotation batch {idx} to be processed")
+                        while idx not in is_processing or is_processing[idx]:
+                            time.sleep(0.1)
+                    if idx in anns_to_upload and anns_to_upload[idx]:
+                        is_uploading[idx] = True
+                        sly.logger.debug(f"Uploading annotation batch {idx}")
+                        anns_list = anns_to_upload[idx]
+
+                        api.annotation.upload_jsons(img_ids, anns_list)
+                        is_uploading[idx] = False
+
+                for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
+                    download_executor.submit(_download_annotations, idx, batch_ids)
+
+                for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
+                    upload_executor.submit(_upload_annotations, idx, batch_ids, anns_to_upload)
+
+                for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
+                    batch_ann_json = _download_annotations(idx, batch_ids)
+
+                    batch_validated_anns = []
+                    sly.logger.debug(f"Processing annotation batch {idx}")
+                    is_processing[idx] = True
+                    for image_id, ann_json in zip(batch_ids, batch_ann_json):
+                        sly.logger.debug("Validaing annotations...")
+                        try:
+                            validated_ann = validate_annotation(ann_json, meta, tag)
+                            batch_validated_anns.append(validated_ann)
+                        except Exception as e:
+                            error_msg = f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}"
+                            extra = {"image id": image_id}
+                            sly.logger.error(error_msg, extra=extra)
+
+                            batch_validated_anns.append(_get_blank_json_ann(ann_json))
+                            continue
+                    anns_to_upload[idx] = batch_validated_anns
+                    is_processing[idx] = False
+                    sly.logger.debug(f"Finished processing annotation batch {idx}")
+
+                pbar_cb(len(dst_imgs_ids))
+
+                download_executor.shutdown(wait=True)
+                upload_executor.shutdown(wait=True)
+            finally:
+                import sys
+
+                if sys.version_info >= (3, 9):
+                    download_executor.shutdown(wait=False, cancel_futures=True)
+                    upload_executor.shutdown(wait=False, cancel_futures=True)
+                else:
+                    download_executor.shutdown(wait=False)
+                    upload_executor.shutdown(wait=False)
+    elif g.project_type == "videos":
+        if tag_name:
+            sly.logger.warning(
+                "Tagging is not supported for videos yet. Will try to fix annotations..."
+            )
+            # tag_meta = meta.get_tag_meta(tag_name)
+            # tag = sly.VideoTag(tag_meta)
+            tag = None
+        else:
+            tag = None
+        videos_count = src_ds.items_count
+        pbar_cb = sly.Progress(
+            f"Processing '{src_ds.name}' dataset", videos_count
+        ).iters_done_report
+
+        videos = api.video.get_list(src_ds.id)
+
+        for video_info in videos:
+            res_video = api.video.upload_id(
+                dst_ds.id, video_info.name, video_info.id, video_info.meta
+            )
+            try:
+                ann_json = api.video.annotation.download(video_info.id)
+                ann = sly.VideoAnnotation.from_json(
+                    ann_json, meta, sly.KeyIdMap(), skip_corrupted=True
+                )
+                api.video.annotation.append(res_video.id, ann)
+            except Exception as e:
+                error_msg = f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}"
+                extra = {"video id": video_info.id}
+                sly.logger.error(error_msg, extra=extra)
+            pbar_cb(1)
     else:
-        tag = None
-    images_count = src_ds.images_count
-    pbar_cb = sly.Progress(f"Processing '{src_ds.name}' dataset", images_count).iters_done_report
-
-    # iterate by generator to avoid memory overflow
-    for batch_imgs in api.image.get_list_generator(src_ds.id, batch_size=500):
-        download_executor = ThreadPoolExecutor(max_workers=10)
-        upload_executor = ThreadPoolExecutor(max_workers=4)
-        try:
-            is_downloading: Dict[int, bool] = {}
-            is_processing: Dict[int, bool] = {}
-            is_uploading: Dict[int, bool] = {}
-            ann_cache = {}
-            anns_to_upload: Dict[int, Dict] = defaultdict(dict)
-
-            batch_img_names = [img.name for img in batch_imgs]
-            batch_img_ids = [img.id for img in batch_imgs]
-            dst_imgs = api.image.upload_ids(dst_ds.id, batch_img_names, batch_img_ids)
-            dst_imgs_ids = [imginfo.id for imginfo in dst_imgs]
-
-            def _get_blank_json_ann(ann_json):
-                return sly.Annotation(ann_json["size"]).to_json()
-
-            def _download_annotations(idx, img_ids):
-                if idx in is_downloading and is_downloading[idx]:
-                    sly.logger.debug(f"Waiting for annotation batch {idx} to be downloaded")
-                    while is_downloading[idx]:
-                        time.sleep(0.1)
-                if idx not in ann_cache:
-                    sly.logger.debug(f"Downloading annotation batch {idx}")
-                    is_downloading[idx] = True
-                    ann_cache[idx] = api.annotation.download_json_batch(src_ds.id, img_ids)
-                    is_downloading[idx] = False
-                return ann_cache[idx]
-
-            def _upload_annotations(idx, img_ids, anns):
-                if idx in is_processing and is_processing[idx] or idx not in is_processing:
-                    sly.logger.debug(f"Waiting for annotation batch {idx} to be processed")
-                    while idx not in is_processing or is_processing[idx]:
-                        time.sleep(0.1)
-                if idx in anns_to_upload and anns_to_upload[idx]:
-                    is_uploading[idx] = True
-                    sly.logger.debug(f"Uploading annotation batch {idx}")
-                    anns_list = anns_to_upload[idx]
-
-                    api.annotation.upload_jsons(img_ids, anns_list)
-                    is_uploading[idx] = False
-
-            for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
-                download_executor.submit(_download_annotations, idx, batch_ids)
-
-            for idx, batch_ids in enumerate(sly.batched(dst_imgs_ids)):
-                upload_executor.submit(_upload_annotations, idx, batch_ids, anns_to_upload)
-
-            for idx, batch_ids in enumerate(sly.batched(batch_img_ids)):
-                batch_ann_json = _download_annotations(idx, batch_ids)
-
-                batch_validated_anns = []
-                sly.logger.debug(f"Processing annotation batch {idx}")
-                is_processing[idx] = True
-                for image_id, ann_json in zip(batch_ids, batch_ann_json):
-                    sly.logger.debug("Validaing annotations...")
-                    try:
-                        validated_ann = validate_annotation(ann_json, meta, tag)
-                        batch_validated_anns.append(validated_ann)
-                    except Exception as e:
-                        error_msg = f"Unexpected error validation annotation. Please, contact technical support. Error message: {repr(e)}"
-                        extra = {"image id": image_id}
-                        sly.logger.error(error_msg, extra=extra)
-
-                        batch_validated_anns.append(_get_blank_json_ann(ann_json))
-                        continue
-                anns_to_upload[idx] = batch_validated_anns
-                is_processing[idx] = False
-                sly.logger.debug(f"Finished processing annotation batch {idx}")
-
-            pbar_cb(len(dst_imgs_ids))
-
-            download_executor.shutdown(wait=True)
-            upload_executor.shutdown(wait=True)
-        finally:
-            import sys
-
-            if sys.version_info >= (3, 9):
-                download_executor.shutdown(wait=False, cancel_futures=True)
-                upload_executor.shutdown(wait=False, cancel_futures=True)
-            else:
-                download_executor.shutdown(wait=False)
-                upload_executor.shutdown(wait=False)
+        raise NotImplementedError(f"Project type '{g.project_type}' is not supported")
 
 
 def process_ds_recursive(

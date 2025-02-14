@@ -4,12 +4,13 @@
   "version": "2.0.0",
   "categories": [
     "images",
+    "videos",
     "data operations",
     "project management"
   ],
   "description": "Validate annotations in a project",
-  "docker_image": "supervisely/base-py-sdk:6.73.145",
-  "min_instance_version": "6.10.0",
+  "docker_image": "supervisely/base-py-sdk:6.73.306",
+  "min_instance_version": "6.12.28",
   "main_script": "src/main.py",
   "modal_template": "src/modal.html",
   "modal_template_state": {
@@ -27,7 +28,9 @@
   "context_menu": {
     "target": [
       "images_project",
-      "images_dataset"
+      "images_dataset",
+      "videos_project",
+      "videos_dataset"
     ]
   },
   "poster": "https://github.com/user-attachments/assets/758eb893-bc1c-4ff5-aa06-286b18557cae"

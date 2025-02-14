@@ -16,8 +16,9 @@ def main():
 
     # create destination project
     new_project_name = f.new_project_name(src_project.name)
+    g.project_type = src_project.type
     dst_project = g.api.project.create(
-        g.workspace_id, new_project_name, change_name_if_conflict=True
+        g.workspace_id, new_project_name, g.project_type, change_name_if_conflict=True
     )
 
     # prepare destination project meta
