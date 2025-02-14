@@ -4,6 +4,7 @@
   "version": "2.0.0",
   "categories": [
     "images",
+    "videos",
     "data operations",
     "project management"
   ],
@@ -27,7 +28,9 @@
   "context_menu": {
     "target": [
       "images_project",
-      "images_dataset"
+      "images_dataset",
+      "videos_project",
+      "videos_dataset"
     ]
   },
   "poster": "https://github.com/user-attachments/assets/758eb893-bc1c-4ff5-aa06-286b18557cae"
