@@ -9,8 +9,8 @@
     "project management"
   ],
   "description": "Validate annotations in a project",
-  "docker_image": "supervisely/base-py-sdk:6.73.145",
-  "min_instance_version": "6.10.0",
+  "docker_image": "supervisely/base-py-sdk:6.73.306",
+  "min_instance_version": "6.12.28",
   "main_script": "src/main.py",
   "modal_template": "src/modal.html",
   "modal_template_state": {
